@@ -621,25 +621,6 @@ gulp.task('run-build-node-istanbul', function () {
         .pipe(gulp.dest('dist'));
 });
 
-const RELEASE_SOURCES = [
-    'dist/VERSION',
-    process.execPath
-];
-
-const RELEASE_LIB = [
-    'dist/node.*',
-    'dist/worker-*',
-    'dist/web.*'
-];
-
-const RELEASE_ADDONS = [
-    'build/Release/nimiq_node_compat.node',
-    'build/Release/nimiq_node_sse2.node',
-    'build/Release/nimiq_node_avx.node',
-    'build/Release/nimiq_node_avx2.node',
-    'build/Release/nimiq_node_avx512f.node'
-];
-
 gulp.task('eslint', function () {
     const eslint = require('gulp-eslint');
     return gulp.src(sources.all)
@@ -678,19 +659,5 @@ gulp.task('build', gulp.series(
         ),
     )
 ));
-
-// Build packages
-gulp.task('prepare-packages', gulp.series('build-node', async function () {
-    gulp.src(RELEASE_SOURCES).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/node-ui/**/*']).pipe(gulp.dest('packaging/BUILD/node-ui'));
-    gulp.src(['clients/nodejs/sample.conf']).pipe(gulp.dest('packaging/BUILD/fakeroot/etc/nimiq'));
-    gulp.src(['package.json']).pipe(replace('"architecture": "none"', `"architecture": "${env.architecture}"`)).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/nimiq']).pipe(replace('node "\\$SCRIPT_PATH/index.js"', '/usr/share/nimiq/{{ cli_entrypoint }}')).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/index.js', 'clients/nodejs/remote.js', 'clients/nodejs/keytool.js']).pipe(replace('../../dist/node.js', './lib/node.js')).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(['clients/nodejs/modules/*.js']).pipe(replace('../../../dist/', '../lib/')).pipe(gulp.dest('packaging/BUILD/modules'));
-    gulp.src(['node_modules/**/*'], {base: '.', dot: true }).pipe(gulp.dest('packaging/BUILD'));
-    gulp.src(RELEASE_LIB).pipe(gulp.dest('packaging/BUILD/lib'));
-    gulp.src(RELEASE_ADDONS).pipe(gulp.dest('packaging/BUILD/build'));
-}));
 
 gulp.task('default', gulp.series('build'));
