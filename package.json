@@ -42,7 +42,7 @@
     "package_name": "nimiq",
     "version": "1.5.8-1",
     "init": "systemd",
-    "architecture": "none",
+    "architecture": "amd64",
     "install_strategy": "copy",
     "description": "Nimiq node.js client",
     "maintainer": "The Nimiq Core Development Team <info@nimiq.com>",
