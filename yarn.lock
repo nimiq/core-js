@@ -5638,7 +5638,7 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-node-deb@^0.10.4:
+node-deb@^0.10.7:
   version "0.10.7"
   resolved "https://registry.yarnpkg.com/node-deb/-/node-deb-0.10.7.tgz#8b0c19e7ee0ea72b2d861cd9ea32aec4c231bb9e"
   integrity sha512-MEXsGSjNcf7HVkaId8wIBjmEa5l1FuLR+KYr84n4RIDj9gDF9VwxU0gvV+9fUYYmZZ9bP+1MvDDOz/ELrMizAA==
