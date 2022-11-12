@@ -114,7 +114,7 @@ class WasmHelper {
         script.src = url;
         if (integrity != null) {
             script.integrity = integrity;
-            script.crossorigin = 'anonymous';
+            script.crossOrigin = 'anonymous';
         }
         head.appendChild(script);
     }
