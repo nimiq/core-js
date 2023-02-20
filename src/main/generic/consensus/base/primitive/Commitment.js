@@ -63,27 +63,27 @@ class Commitment extends Serializable {
      * @returns {Uint8Array}
      */
     static _commitmentsAggregate(commitments) {
-        if (commitments.some(commitment => commitment.byteLength !== PublicKey.SIZE)) {
+        if (commitments.some(commitment => commitment.byteLength !== Commitment.SIZE)) {
             throw Error('Wrong buffer size.');
         }
-        const concatenatedCommitments = new Uint8Array(commitments.length * PublicKey.SIZE);
+        const concatenatedCommitments = new Uint8Array(commitments.length * Commitment.SIZE);
         for (let i = 0; i < commitments.length; ++i) {
-            concatenatedCommitments.set(commitments[i], i * PublicKey.SIZE);
+            concatenatedCommitments.set(commitments[i], i * Commitment.SIZE);
         }
         if (PlatformUtils.isNodeJs()) {
-            const out = new Uint8Array(PublicKey.SIZE);
+            const out = new Uint8Array(Commitment.SIZE);
             NodeNative.node_ed25519_aggregate_commitments(out, concatenatedCommitments, commitments.length);
             return out;
         } else {
             let stackPtr;
             try {
                 stackPtr = Module.stackSave();
-                const wasmOut = Module.stackAlloc(PublicKey.SIZE);
+                const wasmOut = Module.stackAlloc(Commitment.SIZE);
                 const wasmInCommitments = Module.stackAlloc(concatenatedCommitments.length);
                 new Uint8Array(Module.HEAPU8.buffer, wasmInCommitments, concatenatedCommitments.length).set(concatenatedCommitments);
                 Module._ed25519_aggregate_commitments(wasmOut, wasmInCommitments, commitments.length);
-                const aggCommitments = new Uint8Array(PublicKey.SIZE);
-                aggCommitments.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, PublicKey.SIZE));
+                const aggCommitments = new Uint8Array(Commitment.SIZE);
+                aggCommitments.set(new Uint8Array(Module.HEAPU8.buffer, wasmOut, Commitment.SIZE));
                 return aggCommitments;
             } catch (e) {
                 Log.w(CryptoWorkerImpl, e);

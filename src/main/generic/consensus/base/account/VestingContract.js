@@ -268,7 +268,7 @@ class VestingContract extends Contract {
             let vestingStart, vestingStepBlocks, vestingStepAmount, vestingTotalAmount;
             const buf = new SerialBuffer(data);
             const owner = Address.unserialize(buf);
-            switch (transaction.data.length) {
+            switch (data.length) {
                 case Address.SERIALIZED_SIZE + 4:
                     vestingStart = 0;
                     vestingStepBlocks = buf.readUint32();
