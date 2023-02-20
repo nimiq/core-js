@@ -12,11 +12,11 @@ jobs:
         node: [ '14' ]
     name: Test on node v${{ matrix.node }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/yarn/
         key: ${{ runner.os }}-yarn-node${{ matrix.node }}-${{ hashFiles('**/yarn.lock') }}
@@ -36,14 +36,14 @@ jobs:
         chrome: [ 'stable', 'beta' ]
     name: Test on Chrome (${{ matrix.chrome }})
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
         node-version: '14'
     - uses: browser-actions/setup-chrome@latest
       with:
         chrome-version: ${{ matrix.chrome }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/yarn/
         key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
@@ -64,14 +64,14 @@ jobs:
         firefox: [ 'latest', 'latest-esr', 'latest-beta' ]
     name: Test on Firefox (${{ matrix.firefox }})
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
         node-version: '14'
     - uses: browser-actions/setup-firefox@v0.0.0
       with:
         firefox-version: ${{ matrix.firefox }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/yarn/
         key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
@@ -92,11 +92,11 @@ jobs:
         browser: [ 'Chrome', 'Firefox' ]
     name: Test ESM (${{ matrix.browser }})
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
         node-version: '14'
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ~/.cache/yarn/
         key: ${{ runner.os }}-yarn-node14-${{ hashFiles('**/yarn.lock') }}
