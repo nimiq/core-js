@@ -103,6 +103,7 @@ class JsonRpcServer {
         this._methods.set('getTransactionByBlockHashAndIndex', this.getTransactionByBlockHashAndIndex.bind(this));
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
+        this._methods.set('getTransactionByHash2', this.getTransactionByHash2.bind(this));
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
         this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
         this._methods.set('mempoolContent', this.mempoolContent.bind(this));
@@ -343,6 +344,18 @@ class JsonRpcServer {
         const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
         if (tx) {
             return this._transactionDetailsToObj(tx);
+        }
+        return null;
+    }
+
+    async getTransactionByHash2(hash) {
+        return this._getTransactionByHash2(Nimiq.Hash.fromString(hash));
+    }
+
+    async _getTransactionByHash2(hash, blockHash, blockHeight) {
+        const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
+        if (tx) {
+            return this._transactionDetailsToObj2(tx);
         }
         return null;
     }
@@ -802,6 +815,33 @@ class JsonRpcServer {
             data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
             proof: Nimiq.BufferUtils.toHex(tx.proof.raw) || null,
             flags: tx.flags,
+        };
+    }
+
+    /**
+     * @param {Client.TransactionDetails} tx
+     * @private
+     */
+    _transactionDetailsToObj2(tx) {
+        return {
+            hash: tx.transactionHash.toHex(),
+            blockHash: tx.blockHash ? tx.blockHash.toHex() : undefined,
+            blockNumber: tx.blockHeight,
+            timestamp: tx.timestamp,
+            confirmations: tx.confirmations,
+            from: tx.sender.toHex(),
+            fromAddress: tx.sender.toUserFriendlyAddress(),
+            fromType: tx.senderType,
+            to: tx.recipient.toHex(),
+            toAddress: tx.recipient.toUserFriendlyAddress(),
+            toType: tx.recipientType,
+            value: tx.value,
+            fee: tx.fee,
+            data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
+            proof: Nimiq.BufferUtils.toHex(tx.proof.raw) || null,
+            flags: tx.flags,
+            validityStartHeight: tx.validityStartHeight,
+            networkId: tx.network,
         };
     }
 
