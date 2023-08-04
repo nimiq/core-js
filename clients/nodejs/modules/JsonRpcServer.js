@@ -127,6 +127,7 @@ class JsonRpcServer {
         this._methods.set('createAccount', this.createAccount.bind(this));
         this._methods.set('getBalance', this.getBalance.bind(this));
         this._methods.set('getAccount', this.getAccount.bind(this));
+        this._methods.set('getAccountsTreeChunk', this.getAccountsTreeChunk.bind(this));
 
         // Blockchain
         this._methods.set('blockNumber', this.blockNumber.bind(this));
@@ -593,6 +594,11 @@ class JsonRpcServer {
         return this._accountToObj(account, address);
     }
 
+    async getAccountsTreeChunk(blockHash, startPrefix) {
+        const chunk = await this._consensus.blockchain.getAccountsTreeChunk(Nimiq.Hash.fromString(blockHash), startPrefix);
+        return chunk ? this._accountsTreeChunkToObj(chunk) : null;
+    }
+
     /*
      * Blockchain
      */
@@ -716,6 +722,31 @@ class JsonRpcServer {
             obj.totalAmount = account.totalAmount;
         }
         return obj;
+    }
+
+    /**
+     * @param {AccountsTreeNode} node
+     * @returns {object}
+     * @private
+     */
+    _accountsTreeNodeObj(node) {
+        return {
+            prefix: node.prefix,
+            account: this._accountToObj(node.account, Nimiq.Address.fromString(node.prefix))
+        }
+    }
+
+    /**
+     * @param {AccountsTreeChunk} chunk
+     * @returns {object}
+     * @private
+     */
+    _accountsTreeChunkToObj(chunk) {
+        return {
+            nodes: chunk.terminalNodes.filter((node) => node.isTerminal()).map((node) => this._accountsTreeNodeObj(node)),
+            proof: chunk.proof.toString(),
+            tail: chunk.tail.prefix,
+        };
     }
 
     /**
