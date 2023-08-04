@@ -158,7 +158,7 @@ class JsonRpcServer {
      */
     static _authenticate(req, res, username, password) {
         if (username && password && req.headers.authorization !== `Basic ${btoa(`${username}:${password}`)}`) {
-            res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"'});
+            res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Use user-defined username and password to access the JSON-RPC API." charset="UTF-8"' });
             res.end();
             return false;
         }
@@ -488,7 +488,7 @@ class JsonRpcServer {
         try {
             address = Nimiq.Address.fromString(addressStr);
             extraData = Nimiq.BufferUtils.fromHex(extraDataHex);
-        } catch (e) {}
+        } catch (e) { }
         const block = await this._miner.getNextBlock(address, extraData);
         if (!block) {
             const e = new Error('Cannot create work template, check state before requesting work.');
@@ -510,7 +510,7 @@ class JsonRpcServer {
         try {
             address = Nimiq.Address.fromString(addressStr);
             extraData = Nimiq.BufferUtils.fromHex(extraDataHex);
-        } catch (e) {}
+        } catch (e) { }
         const block = await this._miner.getNextBlock(address, extraData);
         if (!block) {
             const e = new Error('Cannot create work template, check state before requesting work.');
@@ -550,7 +550,7 @@ class JsonRpcServer {
         /** @type {Block} */
         const block = Nimiq.Block.unserialize(Nimiq.BufferUtils.fromHex(blockHex));
         if (!block.header.bodyHash.equals(block.body.hash())) throw new Error('Submitted invalid block: bodyHash and body.hash() mismatch');
-        return this._miner.onWorkerShare({hash: await block.header.pow(), nonce: block.header.nonce, block});
+        return this._miner.onWorkerShare({ hash: await block.header.pow(), nonce: block.header.nonce, block });
     }
 
     /*
@@ -778,7 +778,7 @@ class JsonRpcServer {
             value: tx.value,
             fee: tx.fee,
             data: Nimiq.BufferUtils.toHex(tx.data) || null,
-            flags: tx.flags
+            flags: tx.flags,
         };
     }
 
@@ -801,7 +801,7 @@ class JsonRpcServer {
             fee: tx.fee,
             data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
             proof: Nimiq.BufferUtils.toHex(tx.proof.raw) || null,
-            flags: tx.flags
+            flags: tx.flags,
         };
     }
 
@@ -847,7 +847,7 @@ class JsonRpcServer {
                 res.writeHead(400);
                 res.end(JSON.stringify({
                     'jsonrpc': '2.0',
-                    'error': {'code': -32600, 'message': 'Invalid Request'},
+                    'error': { 'code': -32600, 'message': 'Invalid Request' },
                     'id': null
                 }));
                 return;
@@ -861,7 +861,7 @@ class JsonRpcServer {
                 if (!msg || msg.jsonrpc !== '2.0' || !msg.method) {
                     result.push({
                         'jsonrpc': '2.0',
-                        'error': {'code': -32600, 'message': 'Invalid Request'},
+                        'error': { 'code': -32600, 'message': 'Invalid Request' },
                         'id': msg ? msg.id : null
                     });
                     continue;
@@ -870,7 +870,7 @@ class JsonRpcServer {
                     Nimiq.Log.w(JsonRpcServer, 'Unknown method called', msg.method);
                     result.push({
                         'jsonrpc': '2.0',
-                        'error': {'code': -32601, 'message': 'Method not found'},
+                        'error': { 'code': -32601, 'message': 'Method not found' },
                         'id': msg.id
                     });
                     continue;
@@ -878,13 +878,13 @@ class JsonRpcServer {
                 try {
                     const methodRes = await this._methods.get(msg.method).apply(null, msg.params instanceof Array ? msg.params : [msg.params]);
                     if (typeof msg.id === 'string' || Number.isInteger(msg.id)) {
-                        result.push({'jsonrpc': '2.0', 'result': methodRes, 'id': msg.id});
+                        result.push({ 'jsonrpc': '2.0', 'result': methodRes, 'id': msg.id });
                     }
                 } catch (e) {
                     Nimiq.Log.d(JsonRpcServer, e.stack);
                     result.push({
                         'jsonrpc': '2.0',
-                        'error': {'code': e.code || 1, 'message': e.message || e.toString()},
+                        'error': { 'code': e.code || 1, 'message': e.message || e.toString() },
                         'id': msg.id
                     });
                 }
