@@ -19,5 +19,6 @@ class Version {
     }
 }
 Version.CODE = 2;
+Version.RPC_API_VERSION = 1;
 Version.CORE_JS_VERSION = '<filled-by-build-system>';
 Class.register(Version);
