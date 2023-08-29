@@ -27,7 +27,7 @@ For developers looking to include Nimiq support on their applications, there are
 
 ## Quickstart
 
-1. Install [Node.js](https://nodejs.org) v8.10.0 - v15.14.0.
+1. Install [Node.js](https://nodejs.org) >= v16.20.2.
 2. On Ubuntu and Debian, install `git` and `build-essential`: `sudo apt-get install -y git build-essential`.
     - On other Linux systems, install `git`, `python3`, `make`, `gcc` and `gcc-c++`.
     - For MacOS or Windows, [check here for git](https://git-scm.com/downloads) and [here for compilation tools](https://github.com/nodejs/node-gyp#on-mac-os-x).
