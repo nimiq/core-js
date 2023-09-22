@@ -1,12 +1,12 @@
 ARG DATA_PATH=/nimiq
 
 #---------------------------- BUILD NIMIQ - BUILD ------------------------------
-FROM node:14-buster as builder
+FROM node:18-bookworm as builder
 # Get repo key and install it
 RUN wget -qO - https://www.nimiq.com/nimiq-signing-key.pub | apt-key add -
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
-FROM node:14-buster-slim
+FROM node:18-bookworm-slim
 
 # Install the repo
 COPY --from=builder /etc/apt/trusted.gpg /etc/apt/

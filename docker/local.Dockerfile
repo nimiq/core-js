@@ -5,7 +5,7 @@ ARG DATA_PATH=/nimiq
 ARG PACKAGING=1
 
 #---------------------------- BUILD NIMIQ - BASE -------------------------------
-FROM node:14-buster as base
+FROM node:18-bookworm as base
 
 # Install build dependencies
 RUN apt-get update \
@@ -41,7 +41,7 @@ RUN --mount=type=cache,sharing=locked,target=/usr/local/share/.cache/yarn \
     yarn install --frozen-lockfile --production
 
 #---------------------------- BUILD NIMIQ - NODE -------------------------------
-FROM node:14-buster-slim
+FROM node:18-bookworm-slim
 
 # Install tini - a tiny init for containers
 RUN apt-get update \
