@@ -1,6 +1,7 @@
-/** Stores the validator configuration that will be registered
- * It also generates the data field for the txns that are necessary to register a new validator* 
-*/
+/**
+ * Stores the validator configuration that will be registered
+ * It also generates the data field for the txns that are necessary to register a new validator
+ */
 class ValidatorRegistry {
     /**
      * @param {Address} validator_address
@@ -8,49 +9,38 @@ class ValidatorRegistry {
      * @param {BLSPublicKey} voting_key
     */
     constructor(validator_address, signing_key, voting_key) {
-
         /** @type {Address} */
         this._validator_address = validator_address;
         /** @type {string} */
         this._signing_key = signing_key;
         /** @type {BLSPublicKey} */
         this._voting_key = voting_key;
-
     }
-
 
     /**
      * Obtains the serialized data for validator registration
-     * 
      * (All sizes in bytes)
-     *  
+     *
      * <- 1  -><- 11 -> <-    32    -><-      20        ->
      * | Type | Unused | Signing key | Validator Address |
-     * 
-     * 
+     *
      * <- 1  -><- 6   -> <-           57                ->
      * | Type | Unused |        Voting key[0]            |
-     * 
-     * 
+     *
      * <- 1  -><- 6   -> <-           57                ->
      * | Type | Unused |        Voting key[1]            |
-     * 
-     * 
+     *
      * <- 1  -><- 6   -> <-           57                ->
      * | Type | Unused |        Voting key[2]            |
-     * 
-     * 
+     *
      * <- 1  -><- 6   -> <-           57                ->
      * | Type | Unused |        Voting key[3]            |
-     * 
-     * 
+     *
      * <- 1  -><- 6   -> <-           57                ->
      * | Type | Unused |        Voting key[4]            |
-     * 
      */
     get_serialized_data() {
-
-        let txns_data = [];
+        const txns_data = [];
 
         // Serialize first part of the transaction data
         let data = new Nimiq.SerialBuffer(64);
@@ -59,7 +49,7 @@ class ValidatorRegistry {
         data.writeUint8(type);
 
         // Unused bytes
-        let unused = new Uint8Array(11);
+        const unused = new Uint8Array(11);
         data.write(unused);
 
         // Signing key and validator address
@@ -70,7 +60,7 @@ class ValidatorRegistry {
         txns_data.push(data);
 
         // Extract the voting key
-        let voting_key = Nimiq.BufferUtils.fromHex(this._voting_key.toHex())
+        const voting_key = Nimiq.BufferUtils.fromHex(this._voting_key.toHex());
 
         if (voting_key.length != 285) {
             console.error('Invalid voting key');
@@ -78,10 +68,9 @@ class ValidatorRegistry {
         }
 
         // Create the next transactions
-        let vk_unused = new Uint8Array(6);
+        const vk_unused = new Uint8Array(6);
 
         for (let i = 0; i < 5; i++) {
-
             data = new Nimiq.SerialBuffer(64);
             type += 1;
             data.writeUint8(type);
@@ -89,7 +78,7 @@ class ValidatorRegistry {
             // We read the voting key in 57 bytes chunks
             data.write(voting_key.read(57));
             txns_data.push(data);
-        };
+        }
 
         return txns_data;
     }
@@ -123,9 +112,9 @@ const fs = require('fs');
 const JSON5 = require('json5');
 
 // This tool uses a nano node
-config.protocol = 'dumb'
+config.protocol = 'dumb';
 config.type = 'nano';
-config.network = "test";
+config.network = 'test';
 
 Nimiq.Log.instance.level = config.log.level;
 for (const tag in config.log.tags) {
@@ -147,7 +136,6 @@ const TAG = 'Node';
 const $ = {};
 
 (async () => {
-
     if (argv.help) {
         return help();
     }
@@ -155,52 +143,52 @@ const $ = {};
     if (!argv.validator){
         // We are in validator configuration generation mode
         // We need to generate the validator paramaters and exit the tool
-        console.log("Generating new validator paramaters... \n\n");
+        console.log('Generating new validator paramaters... \n\n');
 
         // First we generate the validator address parameters.
-        let validatorKeyPair =  NimiqPOS.KeyPair.generate();
-        let validatorAddress = validatorKeyPair.toAddress();
+        const validatorKeyPair =  NimiqPOS.KeyPair.generate();
+        const validatorAddress = validatorKeyPair.toAddress();
 
-        console.log("   Validator Account: ");
-        console.log("Address: ");
+        console.log('   Validator Account: ');
+        console.log('Address: ');
         console.log(validatorAddress.toUserFriendlyAddress());
-        console.log("Public key: ");
+        console.log('Public key: ');
         console.log(validatorKeyPair.publicKey.toHex());
-        console.log("Private Key: ");
+        console.log('Private Key: ');
         console.log(validatorKeyPair.privateKey.toHex());
 
         // Now we generate the signing key.
-        let signingKeyPair =  NimiqPOS.KeyPair.generate();
+        const signingKeyPair =  NimiqPOS.KeyPair.generate();
 
-        console.log("\n   Signing key: ");
-        console.log("Public key: ");
+        console.log('\n   Signing key: ');
+        console.log('Public key: ');
         console.log(signingKeyPair.publicKey.toHex());
-        console.log("Private key: ");
+        console.log('Private key: ');
         console.log(signingKeyPair.privateKey.toHex());
 
         // Finally we generate the voting key (BLS)
-        let votingKeyPair = NimiqPOS.BLSKeyPair.generate();
+        const votingKeyPair = NimiqPOS.BLSKeyPair.generate();
 
-        console.log("\n   Voting key: ");
-        console.log("Public key: ");
+        console.log('\n   Voting key: ');
+        console.log('Public key: ');
         console.log(votingKeyPair.publicKey.toHex());
-        console.log("Secret key: ");
+        console.log('Secret key: ');
         console.log(votingKeyPair.secretKey.toHex());
 
         // Now we write the configuration to a JSON file
         const validatorConfiguration = {
-            "ValidatorAccount": {
-                "Address": validatorAddress.toUserFriendlyAddress(),
-                "PublicKey": validatorKeyPair.publicKey.toHex(),
-                "PrivateKey": validatorKeyPair.privateKey.toHex(),
+            'ValidatorAccount': {
+                'Address': validatorAddress.toUserFriendlyAddress(),
+                'PublicKey': validatorKeyPair.publicKey.toHex(),
+                'PrivateKey': validatorKeyPair.privateKey.toHex(),
             },
-            "SigningKey": {
-                "PublicKey": signingKeyPair.publicKey.toHex(),
-                "PrivateKey": signingKeyPair.privateKey.toHex(),
+            'SigningKey': {
+                'PublicKey': signingKeyPair.publicKey.toHex(),
+                'PrivateKey': signingKeyPair.privateKey.toHex(),
             },
-            "VotingKey": {
-                "PublicKey": votingKeyPair.publicKey.toHex(),
-                "SecretKey": votingKeyPair.secretKey.toHex(),
+            'VotingKey': {
+                'PublicKey': votingKeyPair.publicKey.toHex(),
+                'SecretKey': votingKeyPair.secretKey.toHex(),
             }
         };
 
@@ -208,22 +196,21 @@ const $ = {};
         const data = JSON.stringify(validatorConfiguration);
 
         try {
-            fs.writeFileSync("validator-keys.json", data);
-          } catch (error) {
+            fs.writeFileSync('validator-keys.json', data);
+        } catch (error) {
             // logging the error
             console.error(error);
-          
+
             throw error;
-          }
+        }
 
-        console.log("\n\nValidator configuration file sucessfully written.");
-
-       process.exit(0);
+        console.log('\n\nValidator configuration file sucessfully written.');
+        process.exit(0);
     }
 
-    console.log(" Reading validator configuration.. ");
+    console.log(' Reading validator configuration.. ');
     let validator_config = JSON5.parse(fs.readFileSync(argv.validator));
-    
+
     console.log(validator_config);
 
     Nimiq.Log.i(TAG, `Nimiq NodeJS Client starting (network=${config.network}`
@@ -271,7 +258,7 @@ const $ = {};
     Nimiq.Log.i(TAG, `Blockchain state: height=${chainHeight}, headHash=${chainHeadHash}`);
 
     // This is the hardcoded address dedicated to validator registration
-    const recipientAddr = Nimiq.Address.fromUserFriendlyAddress("NQ07 0000 0000 0000 0000 0000 0000 0000 0000");
+    const recipientAddr = Nimiq.Address.fromUserFriendlyAddress('NQ07 0000 0000 0000 0000 0000 0000 0000 0000');
 
     // Extract the validator configuration (we read the private keys from the config file)
     let validatorPrivateKey = Nimiq.PrivateKey.unserialize(Nimiq.BufferUtils.fromHex(validator_config.ValidatorAccount.PrivateKey));
@@ -290,11 +277,10 @@ const $ = {};
     let data = validator.get_serialized_data();
 
     // We monitor the status of the validator registration transactions
-    $.client.addTransactionListener(async (tx) => {
-        console.log(" Transaction update: ");
+    $.client.addTransactionListener((tx) => {
+        console.log(' Transaction update: ');
         console.log(tx);
     }, [recipientAddr]);
-
 
     let consensusState = Nimiq.Client.ConsensusState.CONNECTING;
     $.client.addConsensusChangedListener(async (state) => {
@@ -304,12 +290,11 @@ const $ = {};
             const chainHeight = await $.client.getHeadHeight();
             const chainHeadHash = await $.client.getHeadHash();
             Nimiq.Log.i(TAG, `Current state: height=${chainHeight}, headHash=${chainHeadHash}`);
-          
+
             // Once we obtain consensus, we send the validator transactions
             // Send the txns for validator registration
             for (let i = 0; i < 6; i++) {
-
-                console.log("sending transaction: ");
+                console.log('sending transaction: ');
 
                 let transaction = new Nimiq.ExtendedTransaction(validatorKeyPair.publicKey.toAddress(), Nimiq.Account.Type.BASIC, recipientAddr, Nimiq.Account.Type.BASIC, 10, 10, chainHeight, Nimiq.Transaction.Flag.NONE, data[i]);
                 let proof = new Nimiq.SerialBuffer(Nimiq.SignatureProof.SINGLE_SIG_SIZE);
@@ -318,15 +303,14 @@ const $ = {};
 
                 let result = await $.client.sendTransaction(transaction);
 
-                console.log(" Transaction result: ");
+                console.log(' Transaction result: ');
                 console.log(result);
 
-                console.log(" Transaction hash: ");
+                console.log(' Transaction hash: ');
                 console.log(transaction.hash().toHex());
             }
         }
     });
-
 
     $.client.addBlockListener(async (hash) => {
         if (consensusState === Nimiq.Client.ConsensusState.SYNCING) {
@@ -342,15 +326,12 @@ const $ = {};
         Nimiq.Log.i(TAG, `Now at block: ${head.height} (${reason})`);
     });
 
-
     $.network.on('peer-joined', (peer) => {
         Nimiq.Log.i(TAG, `Connected to ${peer.peerAddress.toString()}`);
     });
     $.network.on('peer-left', (peer) => {
         Nimiq.Log.i(TAG, `Disconnected from ${peer.peerAddress.toString()}`);
     });
-
-
 })().catch(e => {
     console.error(e);
     process.exit(1);
