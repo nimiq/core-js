@@ -28,7 +28,7 @@
     "url": "https://github.com/nimiq/core-js.git"
   },
   "engines": {
-    "node": ">=16.20.2"
+    "node": ">=18.20.3"
   },
   "files": [
     "dist/node.js",

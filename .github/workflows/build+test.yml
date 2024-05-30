@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        node: [16, 18, 20]
+        node: [18, 20, 22]
     name: Test on node v${{ matrix.node }}
     steps:
     - uses: actions/checkout@v3
