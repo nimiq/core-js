@@ -1,6 +1,6 @@
 {
   "name": "@nimiq/core",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "main": "dist/node.js",
   "types": "dist/types.d.ts",
   "homepage": "https://nimiq.com/",
@@ -38,7 +38,7 @@
   ],
   "node_deb": {
     "package_name": "nimiq",
-    "version": "1.6.2-1",
+    "version": "1.6.3-1",
     "init": "systemd",
     "architecture": "amd64",
     "install_strategy": "copy",
