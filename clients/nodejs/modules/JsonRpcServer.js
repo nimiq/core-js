@@ -55,6 +55,7 @@ class JsonRpcServer {
                 res.end('Nimiq JSON-RPC Server\n');
             } else if (req.method === 'POST') {
                 if (JsonRpcServer._authenticate(req, res, config.username, config.password)) {
+                    res.setHeader('Content-Type', 'application/json');
                     this._onRequest(req, res);
                 }
             } else {
