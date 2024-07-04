@@ -104,7 +104,6 @@ class JsonRpcServer {
         this._methods.set('getTransactionByBlockHashAndIndex', this.getTransactionByBlockHashAndIndex.bind(this));
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
-        this._methods.set('getTransactionByHash2', this.getTransactionByHash2.bind(this));
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
         this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
         this._methods.set('mempoolContent', this.mempoolContent.bind(this));
@@ -325,7 +324,8 @@ class JsonRpcServer {
     async getTransactionByBlockHashAndIndex(blockHash, txIndex) {
         const block = await this._client.getBlock(Nimiq.Hash.fromString(blockHash), true);
         if (block && block.transactions.length > txIndex) {
-            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
+            const head = await this._client.getHeadHeight()
+            return this._transactionToObj(block.transactions[txIndex], block, head);
         }
         return null;
     }
@@ -333,7 +333,8 @@ class JsonRpcServer {
     async getTransactionByBlockNumberAndIndex(number, txIndex) {
         const block = await this._getBlockByNumber(number);
         if (block && block.transactions.length > txIndex) {
-            return this._transactionToObj(block.transactions[txIndex], block, txIndex);
+            const head = await this._client.getHeadHeight()
+            return this._transactionToObj(block.transactions[txIndex], block, head);
         }
         return null;
     }
@@ -346,18 +347,6 @@ class JsonRpcServer {
         const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
         if (tx) {
             return this._transactionDetailsToObj(tx);
-        }
-        return null;
-    }
-
-    async getTransactionByHash2(hash) {
-        return this._getTransactionByHash2(Nimiq.Hash.fromString(hash));
-    }
-
-    async _getTransactionByHash2(hash, blockHash, blockHeight) {
-        const tx = await this._client.getTransaction(hash, blockHash, blockHeight);
-        if (tx) {
-            return this._transactionDetailsToObj2(tx);
         }
         return null;
     }
@@ -791,12 +780,14 @@ class JsonRpcServer {
             confirmations: (await this._client.getHeadHeight()) - block.height + 1
         };
         if (block.isFull()) {
+            const head = await this._client.getHeadHeight()
+
             obj.miner = block.minerAddr.toHex();
             obj.minerAddress = block.minerAddr.toUserFriendlyAddress();
             obj.extraData = Nimiq.BufferUtils.toHex(block.body.extraData);
             obj.size = block.serializedSize;
             obj.transactions = includeTransactions
-                ? await Promise.all(block.transactions.map((tx, i) => this._transactionToObj(tx, block, i)))
+                ? await Promise.all(block.transactions.map((tx) => this._transactionToObj(tx, block, head)))
                 : block.transactions.map((tx) => tx.hash().toHex());
         }
         return obj;
@@ -805,25 +796,29 @@ class JsonRpcServer {
     /**
      * @param {Transaction} tx
      * @param {Block} [block]
-     * @param {number} [i]
+     * @param {number} [head]
      * @private
      */
-    async _transactionToObj(tx, block, i) {
+    async _transactionToObj(tx, block, head) {
         return {
             hash: tx.hash().toHex(),
             blockHash: block ? block.hash().toHex() : undefined,
             blockNumber: block ? block.height : undefined,
             timestamp: block ? block.timestamp : undefined,
-            confirmations: block ? (await this._client.getHeadHeight()) - block.height + 1 : 0,
-            transactionIndex: i,
+            confirmations: block && head ? head - block.height + 1 : 0,
             from: tx.sender.toHex(),
             fromAddress: tx.sender.toUserFriendlyAddress(),
+            fromType: tx.senderType,
             to: tx.recipient.toHex(),
             toAddress: tx.recipient.toUserFriendlyAddress(),
+            toType: tx.recipientType,
             value: tx.value,
             fee: tx.fee,
             data: Nimiq.BufferUtils.toHex(tx.data) || null,
+            proof: Nimiq.BufferUtils.toHex(tx.proof) || null,
             flags: tx.flags,
+            validityStartHeight: tx.validityStartHeight,
+            networkId: tx.networkId,
         };
     }
 
@@ -832,29 +827,6 @@ class JsonRpcServer {
      * @private
      */
     _transactionDetailsToObj(tx) {
-        return {
-            hash: tx.transactionHash.toHex(),
-            blockHash: tx.blockHash ? tx.blockHash.toHex() : undefined,
-            blockNumber: tx.blockHeight,
-            timestamp: tx.timestamp,
-            confirmations: tx.confirmations,
-            from: tx.sender.toHex(),
-            fromAddress: tx.sender.toUserFriendlyAddress(),
-            to: tx.recipient.toHex(),
-            toAddress: tx.recipient.toUserFriendlyAddress(),
-            value: tx.value,
-            fee: tx.fee,
-            data: Nimiq.BufferUtils.toHex(tx.data.raw) || null,
-            proof: Nimiq.BufferUtils.toHex(tx.proof.raw) || null,
-            flags: tx.flags,
-        };
-    }
-
-    /**
-     * @param {Client.TransactionDetails} tx
-     * @private
-     */
-    _transactionDetailsToObj2(tx) {
         return {
             hash: tx.transactionHash.toHex(),
             blockHash: tx.blockHash ? tx.blockHash.toHex() : undefined,
