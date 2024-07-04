@@ -44,6 +44,7 @@ class JsonRpcServer {
                     found |= Nimiq.NetUtils.isIPv4inSubnet(remoteIp, subnet);
                 }
                 if (!found) {
+                    console.log(`RPC: IP ${remoteIp} not allowed access`);
                     res.writeHead(403);
                     res.end();
                     return;
