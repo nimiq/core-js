@@ -421,14 +421,14 @@ class MockNetwork {
         MockNetwork._lossrate = lossrate;
 
         spyOn(WebSocketFactory, 'newWebSocketServer').and.callFake((netconfig) => {
-            const peerAddress = netconfig.peerAddress;
+            const peerAddress = netconfig.publicPeerAddress;
             const server = new MockWebSocketServer();
             MockNetwork._servers.set(`wss://${peerAddress.host}:${peerAddress.port}`, server);
             return server;
         });
 
         spyOn(WebSocketFactory, 'newWebSocket').and.callFake((url, options, netconfig) => {
-            const peerAddress = netconfig.peerAddress;
+            const peerAddress = netconfig.publicPeerAddress;
             const seed = peerAddress.protocol === Protocol.WSS ?
                 `wss://${peerAddress.host}:${peerAddress.port}` :
                 `reserved${MockNetwork._clientSerial++}.test`;

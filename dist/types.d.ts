@@ -131,7 +131,7 @@ declare class ClientConfigurationBuilder {
     public volatile(volatile?: boolean): this;
     public blockConfirmations(confirmations: number): this;
     public feature(...feature: Client.Feature[]): this;
-    public reverseProxy(port: number, header: string, ...addresses: string[]): this;
+    public reverseProxy(port: number, header: string, terminatesSsl: boolean, ...addresses: string[]): this;
     public build(): Client.Configuration;
     public instantiateClient(): Client;
 }
@@ -4014,13 +4014,13 @@ export class NetworkConfig {
 export class WsNetworkConfig extends NetworkConfig {
     public protocol: number;
     public port: number;
-    public reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string };
+    public reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string, terminatesSsl: boolean };
     public peerAddress: WsPeerAddress | WssPeerAddress;
     public secure: boolean;
     constructor(
         host: string,
         port: number,
-        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string },
+        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string, terminatesSsl: boolean },
     );
 }
 
@@ -4031,7 +4031,7 @@ export class WssNetworkConfig extends WsNetworkConfig {
         port: number,
         key: string,
         cert: string,
-        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string },
+        reverseProxy: { enabled: boolean, port: number, addresses: string[], header: string, terminatesSsl: boolean },
     );
 }
 

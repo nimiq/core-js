@@ -43,7 +43,7 @@ describe('LightConsensus', () => {
                 });
                 await blockchain2.pushBlock(block);
             }
-            const netConfig2 = new WssNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for'});
+            const netConfig2 = new WssNetworkConfig('node2.test', 8080, 'key2', 'cert2', { enabled: false, port: 8444, address: '::ffff:127.0.0.1', header: 'x-forwarded-for', terminatesSsl: false});
             const consensus2 = await Consensus.volatileFull(netConfig2);
             consensus2.network.allowInboundConnections = true;
             await copyChain(blockchain2, consensus2.blockchain);
@@ -61,7 +61,7 @@ describe('LightConsensus', () => {
             expect(consensus3.blockchain.height).toBe(9);
 
             // Connect to peer 2.
-            consensus3.network._connections.connectOutbound(netConfig2.peerAddress);
+            consensus3.network._connections.connectOutbound(netConfig2.publicPeerAddress);
 
             setTimeout(() => {
                 expect(consensus1.blockchain.head.equals(blockchain2.head)).toBe(true);

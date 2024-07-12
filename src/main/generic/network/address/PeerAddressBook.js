@@ -303,7 +303,7 @@ class PeerAddressBook extends Observable {
      */
     _add(channel, peerAddress) {
         // Ignore our own address.
-        if (this._networkConfig.peerAddress.equals(peerAddress)) {
+        if (this._networkConfig.publicPeerAddress.equals(peerAddress)) {
             return false;
         }
 

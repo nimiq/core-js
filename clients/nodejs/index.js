@@ -170,7 +170,7 @@ const $ = {};
 
     const clientConfigBuilder = Nimiq.Client.Configuration.builder();
     clientConfigBuilder.protocol(config.protocol, config.host, config.port, config.tls.key, config.tls.cert);
-    if (config.reverseProxy.enabled) clientConfigBuilder.reverseProxy(config.reverseProxy.port, config.reverseProxy.header, ...config.reverseProxy.addresses);
+    if (config.reverseProxy.enabled) clientConfigBuilder.reverseProxy(config.reverseProxy.port, config.reverseProxy.header, config.reverseProxy.terminatesSsl, ...config.reverseProxy.addresses);
     if (config.passive) clientConfigBuilder.feature(Nimiq.Client.Feature.PASSIVE);
     if (config.type === 'full' || config.type === 'light') clientConfigBuilder.feature(Nimiq.Client.Feature.MEMPOOL);
     const clientConfig = clientConfigBuilder.build();
@@ -200,7 +200,7 @@ const $ = {};
     $.mempool = $.consensus.mempool;
     $.network = $.consensus.network;
 
-    Nimiq.Log.i(TAG, `Peer address: ${networkConfig.peerAddress.toString()} - public key: ${networkConfig.keyPair.publicKey.toHex()}`);
+    Nimiq.Log.i(TAG, `Peer address: ${networkConfig.publicPeerAddress.toString()} - public key: ${networkConfig.keyPair.publicKey.toHex()}`);
 
     // TODO: Wallet key.
     $.walletStore = await new Nimiq.WalletStore();

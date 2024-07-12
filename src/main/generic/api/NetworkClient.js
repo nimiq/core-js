@@ -63,7 +63,7 @@ Client.Network = class Network {
      */
     async getOwnAddress() {
         const consensus = await this._client._consensus;
-        return new Client.BasicAddress(consensus.network.config.peerAddress);
+        return new Client.BasicAddress(consensus.network.config.publicPeerAddress);
     }
 
     /**

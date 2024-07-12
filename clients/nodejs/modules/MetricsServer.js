@@ -79,7 +79,7 @@ class MetricsServer {
 
     get _desc() {
         return {
-            peer: this._network._networkConfig.peerAddress.toString()
+            peer: this._network._networkConfig.internalPeerAddress.toString()
         };
     }
 

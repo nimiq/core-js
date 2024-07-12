@@ -184,15 +184,17 @@ Client.ConfigurationBuilder = class ConfigurationBuilder {
     /**
      * @param {number} port
      * @param {string} header
+     * @param {boolean} terminatesSsl
      * @param {...string} addresses
      * @returns {Client.ConfigurationBuilder}
      */
-    reverseProxy(port, header, ...addresses) {
+    reverseProxy(port, header, terminatesSsl, ...addresses) {
         if (this._protocol !== 'ws' && this._protocol !== 'wss') throw new Error('Protocol must be ws or wss for reverse proxy.');
         this._reverseProxy = {
             enabled: true,
             port: this._requiredType(port, 'port', 'number'),
             header: this._requiredType(header, 'header', 'string'),
+            terminatesSsl,
             addresses: addresses
         };
         return this;
