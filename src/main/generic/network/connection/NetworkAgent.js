@@ -130,7 +130,7 @@ class NetworkAgent extends Observable {
         // Kick off the handshake by telling the peer our version, network address & blockchain head hash.
         // Some browsers (Firefox, Safari) send the data-channel-open event too early, so sending the version message might fail.
         // Try again in this case.
-        if (!this._channel.version(this._networkConfig.peerAddress, this._blockchain.headHash, this._challengeNonce, this._networkConfig.appAgent)) {
+        if (!this._channel.version(this._networkConfig.publicPeerAddress, this._blockchain.headHash, this._challengeNonce, this._networkConfig.appAgent)) {
             this._versionAttempts++;
             if (this._versionAttempts >= NetworkAgent.VERSION_ATTEMPTS_MAX || this._channel.closed) {
                 this._channel.close(CloseType.SENDING_OF_VERSION_MESSAGE_FAILED, 'sending of version message failed');
@@ -303,7 +303,7 @@ class NetworkAgent extends Observable {
         }
 
         // Verify signature
-        const data = BufferUtils.concatTypedArrays(this._networkConfig.peerAddress.peerId.serialize(), this._challengeNonce);
+        const data = BufferUtils.concatTypedArrays(this._networkConfig.publicPeerAddress.peerId.serialize(), this._challengeNonce);
         if (!msg.signature.verify(msg.publicKey, data)) {
             this._channel.close(CloseType.INVALID_SIGNATURE_IN_VERACK_MESSAGE, 'Invalid signature in verack message');
             return;
@@ -330,7 +330,7 @@ class NetworkAgent extends Observable {
 
         // Regularly announce our address.
         this._timers.setInterval('announce-addr',
-            () => this._channel.addr([this._networkConfig.peerAddress]),
+            () => this._channel.addr([this._networkConfig.publicPeerAddress]),
             NetworkAgent.ANNOUNCE_ADDR_INTERVAL);
 
         // Tell listeners that the handshake with this peer succeeded.

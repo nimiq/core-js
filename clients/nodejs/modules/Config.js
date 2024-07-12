@@ -22,7 +22,7 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number}} uiServer
  * @property {{enabled: boolean, port: number, password: string}} metricsServer
  * @property {{seed: string, address: string}} wallet
- * @property {{enabled: boolean, port: number, address: string, addresses: Array.<string>, header: string}} reverseProxy
+ * @property {{enabled: boolean, port: number, address: string, addresses: Array.<string>, header: string, terminatesSsl: boolean}} reverseProxy
  * @property {{level: string, tags: object}} log
  * @property {Array.<{host: string, port: number, publicKey: string, protocol: string}>} seedPeers
  * @property {object} constantOverrides
@@ -83,7 +83,8 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         port: 8444,
         address: '::ffff:127.0.0.1', // deprecated
         addresses: [],
-        header: 'x-forwarded-for'
+        header: 'x-forwarded-for',
+        terminatesSsl: false
     },
     log: {
         level: 'info',
@@ -163,7 +164,8 @@ const CONFIG_TYPES = {
             port: 'number',
             address: 'string', // deprecated
             addresses: {type: 'array', inner: 'string'},
-            header: 'string'
+            header: 'string',
+            terminatesSsl: 'boolean'
         }
     },
     log: {

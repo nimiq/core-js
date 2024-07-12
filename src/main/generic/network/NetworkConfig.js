@@ -128,7 +128,14 @@ class NetworkConfig {
     /**
      * @type {PeerAddress}
      */
-    get peerAddress() {
+    get internalPeerAddress() {
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * @type {PeerAddress}
+     */
+    get publicPeerAddress() {
         throw new Error('Not implemented');
     }
 
@@ -157,7 +164,7 @@ class WsNetworkConfig extends NetworkConfig {
      * @constructor
      * @param {string} host
      * @param {number} port
-     * @param {{enabled: boolean, port: number, addresses: Array.<string>, header: string}} reverseProxy
+     * @param {{enabled: boolean, port: number, addresses: Array.<string>, header: string, terminatesSsl: boolean}} reverseProxy
      */
     constructor(host, port, reverseProxy) {
         super(Protocol.WS | Protocol.WSS);
@@ -182,7 +189,7 @@ class WsNetworkConfig extends NetworkConfig {
     }
 
     /**
-     * @type {{enabled: boolean, port: number, addresses: Array.<string>, header: string}}
+     * @type {{enabled: boolean, port: number, addresses: Array.<string>, header: string, terminatesSsl: boolean}}
      */
     get reverseProxy() {
         return this._reverseProxy;
@@ -192,13 +199,41 @@ class WsNetworkConfig extends NetworkConfig {
      * @type {WsPeerAddress|WssPeerAddress}
      * @override
      */
-    get peerAddress() {
+    get internalPeerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw new Error('PeerAddress is not configured.');
+        }
+
+        const peerAddress = new WsPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this.publicKey, /*distance*/ 0,
+            this._host, this._port);
+
+        if (!peerAddress.globallyReachable()) {
+            throw new Error('PeerAddress not globally reachable.');
+        }
+
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
+    }
+
+    /**
+     * @type {WsPeerAddress|WssPeerAddress}
+     * @override
+     */
+    get publicPeerAddress() {
         if (!this._services || !this._keyPair) {
             throw new Error('PeerAddress is not configured.');
         }
 
         const port = this._reverseProxy.enabled ? this._reverseProxy.port : this._port;
-        const peerAddress = new WsPeerAddress(
+        let _PeerAddress;
+        if (this._reverseProxy.enabled && this._reverseProxy.terminatesSsl) {
+            _PeerAddress = WssPeerAddress;
+        } else {
+            _PeerAddress = WsPeerAddress;
+        }
+        const peerAddress = new _PeerAddress(
             this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
             this.publicKey, /*distance*/ 0,
             this._host, port);
@@ -260,7 +295,29 @@ class WssNetworkConfig extends WsNetworkConfig {
      * @type {WsPeerAddress|WssPeerAddress}
      * @override
      */
-    get peerAddress() {
+    get internalPeerAddress() {
+        if (!this._services || !this._keyPair) {
+            throw new Error('PeerAddress is not configured.');
+        }
+
+        const peerAddress = new WssPeerAddress(
+            this._services.provided, Date.now(), NetAddress.UNSPECIFIED,
+            this.publicKey, /*distance*/ 0,
+            this._host, this._port);
+
+        if (!peerAddress.globallyReachable()) {
+            throw new Error('PeerAddress not globally reachable.');
+        }
+
+        peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
+        return peerAddress;
+    }
+
+    /**
+     * @type {WsPeerAddress|WssPeerAddress}
+     * @override
+     */
+    get publicPeerAddress() {
         if (!this._services || !this._keyPair) {
             throw new Error('PeerAddress is not configured.');
         }
@@ -321,7 +378,7 @@ class RtcNetworkConfig extends NetworkConfig {
      * @type {RtcPeerAddress}
      * @override
      */
-    get peerAddress() {
+    get internalPeerAddress() {
         if (!this._services || !this._keyPair) {
             throw new Error('PeerAddress is not configured.');
         }
@@ -331,6 +388,14 @@ class RtcNetworkConfig extends NetworkConfig {
             this.publicKey, /*distance*/ 0);
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
+    }
+
+    /**
+     * @type {RtcPeerAddress}
+     * @override
+     */
+    get publicPeerAddress() {
+        return this.internalPeerAddress;
     }
 }
 Class.register(RtcNetworkConfig);
@@ -356,7 +421,7 @@ class DumbNetworkConfig extends NetworkConfig {
      * @type {DumbPeerAddress}
      * @override
      */
-    get peerAddress() {
+    get internalPeerAddress() {
         if (!this._services || !this._keyPair) {
             throw new Error('PeerAddress is not configured.');
         }
@@ -366,6 +431,14 @@ class DumbNetworkConfig extends NetworkConfig {
             this.publicKey, /*distance*/ 0);
         peerAddress.signature = Signature.create(this._keyPair.privateKey, this.publicKey, peerAddress.serializeContent());
         return peerAddress;
+    }
+
+    /**
+     * @type {DumbPeerAddress}
+     * @override
+     */
+    get publicPeerAddress() {
+        return this.internalPeerAddress;
     }
 }
 Class.register(DumbNetworkConfig);

@@ -12,11 +12,11 @@ class WebSocketConnector extends Observable {
         this._protocolPrefix = protocolPrefix;
         this._networkConfig = networkConfig;
 
-        if (networkConfig.peerAddress.protocol === this._protocol) {
+        if (networkConfig.internalPeerAddress.protocol === this._protocol) {
             this._wss = WebSocketFactory.newWebSocketServer(networkConfig);
             this._wss.on('connection', (ws, req) => this._onConnection(ws, req));
 
-            Log.d(WebSocketConnector, `${this._protocolPrefix.toUpperCase()}-Connector listening on port ${networkConfig.peerAddress.port}`);
+            Log.d(WebSocketConnector, `${this._protocolPrefix.toUpperCase()}-Connector listening on port ${networkConfig.internalPeerAddress.port}`);
         }
 
         /** @type {HashMap.<PeerAddress, WebSocket>} */

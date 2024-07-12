@@ -546,7 +546,7 @@ class ConnectionPool extends Observable {
 
                     case PeerConnectionState.NEGOTIATING:
                         // The peer with the lower peerId accepts this connection and closes his stored connection.
-                        if (this._networkConfig.peerAddress.peerId.compare(peer.peerAddress.peerId) < 0) {
+                        if (this._networkConfig.publicPeerAddress.peerId.compare(peer.peerAddress.peerId) < 0) {
                             storedConnection.peerChannel.close(CloseType.SIMULTANEOUS_CONNECTION,
                                 'simultaneous connection (post handshake) - lower peerId');
                             Assert.that(!this.getConnectionByPeerAddress(peer.peerAddress), 'PeerConnection not removed');
