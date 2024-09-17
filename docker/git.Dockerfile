@@ -47,7 +47,7 @@ FROM node:18-bookworm-slim
 
 # Install tini - a tiny init for containers
 RUN apt-get update \
-    && apt-get --no-install-recommends -y install tini \
+    && apt-get --no-install-recommends -y install tini curl \
     && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?

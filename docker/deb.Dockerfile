@@ -14,7 +14,7 @@ RUN echo "deb [arch=amd64] http://repo.nimiq.com/deb stable main" > /etc/apt/sou
 
 # Install nimiq and tini
 RUN apt-get update \
-    && apt-get --no-install-recommends -y install nimiq tini \
+    && apt-get --no-install-recommends -y install nimiq tini curl \
     && rm -rf /var/lib/apt/lists/*
 
 # We're going to execute nimiq in the context of its own user, what else?
