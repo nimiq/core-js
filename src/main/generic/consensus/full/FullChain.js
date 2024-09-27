@@ -592,8 +592,8 @@ class FullChain extends BaseChain {
         }
 
         const transactionReceipts = [];
-        const entriesBySender = await this._transactionStore.getBySender(address, (!limit || limit < 0 || !Number.isFinite(limit)) ? null : (limit / 2));
-        const entriesByRecipient = await this._transactionStore.getByRecipient(address, (!limit || limit < 0 || !Number.isFinite(limit)) ? null : (limit / 2));
+        const entriesBySender = await this._transactionStore.getBySender(address, (!limit || limit < 0 || !Number.isFinite(limit)) ? null : limit);
+        const entriesByRecipient = await this._transactionStore.getByRecipient(address, (!limit || limit < 0 || !Number.isFinite(limit)) ? null : limit);
 
         entriesBySender.forEach(entry => {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
@@ -603,7 +603,11 @@ class FullChain extends BaseChain {
             transactionReceipts.push(new TransactionReceipt(entry.transactionHash, entry.blockHash, entry.blockHeight));
         });
 
-        return transactionReceipts;
+        return transactionReceipts
+            // Sort ascending by block height
+            .sort((a, b) => a.blockHeight - b.blockHeight)
+            // Slice latest transactions by limit, or return all if limit is not set or invalid.
+            .slice(transactionReceipts.length - ((!limit || limit < 0 || !Number.isFinite(limit)) ? transactionReceipts.length : limit));
     }
 
     /**
