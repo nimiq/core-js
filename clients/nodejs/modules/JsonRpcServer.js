@@ -105,6 +105,7 @@ class JsonRpcServer {
         this._methods.set('getTransactionByBlockHashAndIndex', this.getTransactionByBlockHashAndIndex.bind(this));
         this._methods.set('getTransactionByBlockNumberAndIndex', this.getTransactionByBlockNumberAndIndex.bind(this));
         this._methods.set('getTransactionByHash', this.getTransactionByHash.bind(this));
+        this._methods.set('getTransactionByHash2', this.getTransactionByHash.bind(this));
         this._methods.set('getTransactionReceipt', this.getTransactionReceipt.bind(this));
         this._methods.set('getTransactionsByAddress', this.getTransactionsByAddress.bind(this));
         this._methods.set('mempoolContent', this.mempoolContent.bind(this));
