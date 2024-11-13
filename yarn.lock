@@ -1048,10 +1048,10 @@
   resolved "https://registry.yarnpkg.com/@nicolo-ribaudo/chokidar-2/-/chokidar-2-2.1.8-no-fsevents.3.tgz#323d72dd25103d0c4fbdce89dadf574a787b1f9b"
   integrity sha512-s88O1aVtXftvp5bCPB7WnmXc5IwOZZ7YPuwNPt+GtOOXpPvad1LfbmjYv+qII7zP6RU2QGnqve27dnLycEnyEQ==
 
-"@nimiq/jungle-db@^0.11.0":
-  version "0.11.0"
-  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.11.0.tgz#a4c03c7e9814bc06f4343692f7e14aabdef3e1ee"
-  integrity sha512-Unt3tonnIP1WouwdhOjI2fIVRTAtaCqB5LroftYwchA+JV7f7WrKV8ABThW86QBueOnIZn0ItO03TnIzThHWUw==
+"@nimiq/jungle-db@^0.11.1":
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/@nimiq/jungle-db/-/jungle-db-0.11.1.tgz#01b85039f158542c8f83e330f51c332f8717b155"
+  integrity sha512-4t1eATxAMOjTNRAF0t6dADY4pHQ6owB3CG4g33/m43+eLx5IFaYKvCJ5uuT2FRqTG5hnqyCNbSZrE8cBurFt4A==
   dependencies:
     atob "^2.0.3"
     btoa "^1.1.2"
