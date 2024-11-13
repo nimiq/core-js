@@ -4,7 +4,7 @@
 %define _topdir %(echo $PWD)/
 
 Name:           nimiq
-Version:        1.6.3
+Version:        1.6.4
 Release:        1
 Summary:        Nimiq node.js client
 
