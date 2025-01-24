@@ -2,6 +2,8 @@
 
 **[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
 
+[Nimiq PoS has been launched](https://www.nimiq.com/blog/nimiq-proof-of-stake-is-now-live/). This repository is archived. You can use the [Nimiq PoS Rust implementation](https://github.com/nimiq/core-rs-albatross/) instead.
+
 ## Resources
 
 - [Nimiq White Paper](https://nimiq.com/whitepaper/): High-level introduction of the Nimiq payment protocol.
