@@ -2,6 +2,8 @@
 
 **[Nimiq](https://nimiq.com/)** is a frictionless payment protocol for the web.
 
+This repository is archived. You can use the [Albatross Rust implementation](https://github.com/nimiq/core-rs-albatross/) instead.
+
 ## Resources
 
 - [Nimiq White Paper](https://nimiq.com/whitepaper/): High-level introduction of the Nimiq payment protocol.
